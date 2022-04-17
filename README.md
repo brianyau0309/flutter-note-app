@@ -1,6 +1,6 @@
-# mynotes
+# flutter-note-app
 
-A new Flutter project.
+a note taking application using flutter and firebase
 
 ## Getting Started
 
