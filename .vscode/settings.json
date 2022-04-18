@@ -1,9 +1,11 @@
 {
     "cSpell.words": [
         "autocorrect",
+        "AUTOINCREMENT",
         "Cupertino",
         "firestore",
         "mynotes",
-        "Schyler"
+        "Schyler",
+        "sqflite"
     ]
 }
