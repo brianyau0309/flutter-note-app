@@ -1,34 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mynotes/constants/routes.dart';
-
-import '../utilities/show_error_dialog.dart';
-
-enum FirebaseLoginError {
-  userNotFound({
-    "code": "user-not-found",
-    "message": "The provided email is not a user.",
-    "title": "User not found"
-  }),
-  wrongPassword({
-    "code": "wrong-password",
-    "message": "Incorrect password.",
-    "title": "Wrong credentials"
-  }),
-  tooManyRequests({
-    "code": "too-many-requests",
-    "message":
-        "This account is temporarily disabled due to many failed login attempts. Please try again later or resetting your password",
-    "title": "Too many fail"
-  });
-
-  const FirebaseLoginError(this.error);
-  final Map error;
-
-  String get code => error['code'];
-  String get title => error['title'];
-  String get message => error['message'];
-}
+import 'package:mynotes/enums/auth_error_message.dart';
+import 'package:mynotes/services/auth/auth_exceptions.dart';
+import 'package:mynotes/services/auth/auth_service.dart';
+import 'package:mynotes/utilities/show_error_dialog.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({Key? key}) : super(key: key);
@@ -82,29 +57,31 @@ class _LoginViewState extends State<LoginView> {
               final email = _email.text;
               final password = _password.text;
               try {
-                await FirebaseAuth.instance.signInWithEmailAndPassword(
-                    email: email, password: password);
-                final user = FirebaseAuth.instance.currentUser;
-                if (user?.emailVerified ?? false) {
+                await AuthService.firebase()
+                    .logIn(email: email, password: password);
+                final user = AuthService.firebase().currentUser;
+                if (user?.isEmailVerified ?? false) {
                   Navigator.of(context)
                       .pushNamedAndRemoveUntil(homeRoute, (route) => false);
                 } else {
                   Navigator.of(context).pushNamedAndRemoveUntil(
                       verifyEmailRoute, (route) => false);
                 }
-              } on FirebaseAuthException catch (e) {
-                const errors = FirebaseLoginError.values;
-                for (final error in errors) {
-                  if (e.code == error.code) {
-                    await showErrorDialog(context, error.message,
-                        title: error.title);
-                    break;
-                  } else if (error == errors.last) {
-                    await showErrorDialog(context, e.toString());
-                  }
-                }
-              } catch (e) {
-                await showErrorDialog(context, e.toString());
+              } on UserNotFoundAuthException {
+                await showErrorDialog(
+                    context, AuthErrorMessage.userNotFound.message,
+                    title: AuthErrorMessage.userNotFound.title);
+              } on WrongPasswordAuthException {
+                await showErrorDialog(
+                    context, AuthErrorMessage.wrongPassword.message,
+                    title: AuthErrorMessage.wrongPassword.title);
+              } on TooManyLoginAuthException {
+                await showErrorDialog(
+                    context, AuthErrorMessage.tooManyRequests.message,
+                    title: AuthErrorMessage.tooManyRequests.title);
+              } on GenericAuthException {
+                await showErrorDialog(
+                    context, AuthErrorMessage.generic.message);
               }
             },
             child: const Text("Login"),
