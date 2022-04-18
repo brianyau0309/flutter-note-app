@@ -1,7 +1,33 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import '../firebase_options.dart';
+import 'package:mynotes/constants/routes.dart';
+
+import '../utilities/show_error_dialog.dart';
+
+enum FirebaseRegisterError {
+  weakPassword({
+    "code": "weak-password",
+    "message": "Password is too weak. It should have more than 6 characters",
+    "title": "Weak password"
+  }),
+  emailAlreadyInUse({
+    "code": "email-already-in-use",
+    "message": "Email is registered.",
+    "title": "Email already in use"
+  }),
+  invalidEmail({
+    "code": "invalid-email",
+    "message": "Please check your email format.",
+    "title": "Invalid email"
+  });
+
+  const FirebaseRegisterError(this.error);
+  final Map error;
+
+  String get code => error['code'];
+  String get title => error['title'];
+  String get message => error['message'];
+}
 
 class RegisterView extends StatefulWidget {
   const RegisterView({Key? key}) : super(key: key);
@@ -55,22 +81,24 @@ class _RegisterViewState extends State<RegisterView> {
               final email = _email.text;
               final password = _password.text;
               try {
-                final userCredential = await FirebaseAuth.instance
-                    .createUserWithEmailAndPassword(
-                        email: email, password: password);
-
-                print(userCredential);
+                await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                    email: email, password: password);
+                await FirebaseAuth.instance.currentUser
+                    ?.sendEmailVerification();
+                Navigator.of(context).pushNamed(verifyEmailRoute);
               } on FirebaseAuthException catch (e) {
-                if (e.code == 'weak-password') {
-                  print("Week password");
-                } else if (e.code == "email-already-in-use") {
-                  print("Email already in use.");
-                } else if (e.code == "invalid-email") {
-                  print("Invalid-email.");
-                } else {
-                  print(e);
-                  print("something wrong");
+                const errors = FirebaseRegisterError.values;
+                for (final error in errors) {
+                  if (e.code == error.code) {
+                    await showErrorDialog(context, error.message,
+                        title: error.title);
+                    break;
+                  } else if (error == errors.last) {
+                    await showErrorDialog(context, e.toString());
+                  }
                 }
+              } catch (e) {
+                await showErrorDialog(context, e.toString());
               }
             },
             child: const Text("Register"),
@@ -78,7 +106,7 @@ class _RegisterViewState extends State<RegisterView> {
           TextButton(
             onPressed: () async {
               Navigator.of(context)
-                  .pushNamedAndRemoveUntil('/login/', (route) => false);
+                  .pushNamedAndRemoveUntil(loginRoute, (route) => false);
             },
             child: const Text("Have a account? Login here!"),
           ),

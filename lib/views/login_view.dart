@@ -1,7 +1,34 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import '../firebase_options.dart';
+import 'package:mynotes/constants/routes.dart';
+
+import '../utilities/show_error_dialog.dart';
+
+enum FirebaseLoginError {
+  userNotFound({
+    "code": "user-not-found",
+    "message": "The provided email is not a user.",
+    "title": "User not found"
+  }),
+  wrongPassword({
+    "code": "wrong-password",
+    "message": "Incorrect password.",
+    "title": "Wrong credentials"
+  }),
+  tooManyRequests({
+    "code": "too-many-requests",
+    "message":
+        "This account is temporarily disabled due to many failed login attempts. Please try again later or resetting your password",
+    "title": "Too many fail"
+  });
+
+  const FirebaseLoginError(this.error);
+  final Map error;
+
+  String get code => error['code'];
+  String get title => error['title'];
+  String get message => error['message'];
+}
 
 class LoginView extends StatefulWidget {
   const LoginView({Key? key}) : super(key: key);
@@ -55,17 +82,23 @@ class _LoginViewState extends State<LoginView> {
               final email = _email.text;
               final password = _password.text;
               try {
-                final userCredential = await FirebaseAuth.instance
-                    .signInWithEmailAndPassword(
-                        email: email, password: password);
+                await FirebaseAuth.instance.signInWithEmailAndPassword(
+                    email: email, password: password);
                 Navigator.of(context)
-                    .pushNamedAndRemoveUntil("/", (route) => false);
+                    .pushNamedAndRemoveUntil(homeRoute, (route) => false);
               } on FirebaseAuthException catch (e) {
-                if (e.code == 'user-not-found') {
-                  print("User not found.");
-                } else if (e.code == 'wrong-password') {
-                  print("Invalid password");
+                const errors = FirebaseLoginError.values;
+                for (final error in errors) {
+                  if (e.code == error.code) {
+                    await showErrorDialog(context, error.message,
+                        title: error.title);
+                    break;
+                  } else if (error == errors.last) {
+                    await showErrorDialog(context, e.toString());
+                  }
                 }
+              } catch (e) {
+                await showErrorDialog(context, e.toString());
               }
             },
             child: const Text("Login"),
@@ -73,7 +106,7 @@ class _LoginViewState extends State<LoginView> {
           TextButton(
             onPressed: () async {
               Navigator.of(context)
-                  .pushNamedAndRemoveUntil('/register/', (route) => false);
+                  .pushNamedAndRemoveUntil(registerRoute, (route) => false);
             },
             child: const Text("Not registered yet? Register here!"),
           ),
