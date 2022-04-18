@@ -52,7 +52,7 @@ class NotesService {
     await getNote(id: note.id);
     final updatedCount = await db.update(noteTable, {
       textColumn: text,
-      isSyncedWithCloudColumn: false,
+      isSyncedWithCloudColumn: 0,
     });
     if (updatedCount == 0) throw CouldNotUpdateNote();
     final updatedNote = await getNote(id: note.id);
