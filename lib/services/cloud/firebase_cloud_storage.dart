@@ -6,6 +6,25 @@ import 'package:mynotes/services/cloud/cloud_storage_exceptions.dart';
 class FirebaseCloudStorage {
   final notes = FirebaseFirestore.instance.collection(notesCollectionName);
 
+  Future<void> deleteNote({required String documentId}) async {
+    try {
+      await notes.doc(documentId).delete();
+    } catch (e) {
+      throw CouldNotDeleteNoteException();
+    }
+  }
+
+  Future<void> updateNote({
+    required String documentId,
+    required String text,
+  }) async {
+    try {
+      await notes.doc(documentId).update({textFieldName: text});
+    } catch (e) {
+      throw CouldNotUpdateNoteException();
+    }
+  }
+
   Stream<Iterable<CloudNote>> allNotes({required String ownerUserId}) =>
       notes.snapshots().map((event) => event.docs
           .map((doc) => CloudNote.fromSnapshot(doc))
@@ -13,27 +32,31 @@ class FirebaseCloudStorage {
 
   Future<Iterable<CloudNote>> getNotes({required String ownerUserId}) async {
     try {
-      await notes
+      return await notes
           .where(
             ownerUserIdFieldName,
             isEqualTo: ownerUserId,
           )
           .get()
-          .then((value) => value.docs.map((doc) => CloudNote(
-                documentId: doc.id,
-                ownerUserId: doc.data()[ownerUserIdFieldName] as String,
-                text: doc.data()[textFieldName] as String,
-              )));
+          .then(
+            (value) => value.docs.map((doc) => CloudNote.fromSnapshot(doc)),
+          );
     } catch (e) {
       throw CouldNotGetAllNotesException();
     }
   }
 
-  void createNewNote({required String ownerUserId}) async {
-    await notes.add({
+  Future<CloudNote> createNewNote({required String ownerUserId}) async {
+    final document = await notes.add({
       ownerUserIdFieldName: ownerUserId,
       textFieldName: '',
     });
+    final fetchedNote = await document.get();
+    return CloudNote(
+      documentId: fetchedNote.id,
+      ownerUserId: ownerUserId,
+      text: '',
+    );
   }
 
   static final FirebaseCloudStorage _shared =
