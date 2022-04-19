@@ -1,7 +1,7 @@
 enum AuthErrorMessage {
   userNotFound({
     "code": "user-not-found",
-    "message": "The provided email is not a user.",
+    "message": "Cannot find a user with the entered credentials",
     "title": "User not found"
   }),
   wrongPassword({
