@@ -49,32 +49,34 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
         appBar: AppBar(
           title: const Text('Forget Password'),
         ),
-        body: Column(children: [
-          TextField(
-            keyboardType: TextInputType.emailAddress,
-            autocorrect: false,
-            autofocus: true,
-            controller: _controller,
-            decoration: const InputDecoration(
-              hintText: "Your email address...",
+        body: SingleChildScrollView(
+          child: Column(children: [
+            TextField(
+              keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
+              autofocus: true,
+              controller: _controller,
+              decoration: const InputDecoration(
+                hintText: "Your email address...",
+              ),
             ),
-          ),
-          TextButton(
-            onPressed: () {
-              final email = _controller.text;
-              context
-                  .read<AuthBloc>()
-                  .add(AuthEventForgotPassword(email: email));
-            },
-            child: const Text('Send me the password reset email'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<AuthBloc>().add(const AuthEventLogout());
-            },
-            child: const Text('Back to login'),
-          )
-        ]),
+            TextButton(
+              onPressed: () {
+                final email = _controller.text;
+                context
+                    .read<AuthBloc>()
+                    .add(AuthEventForgotPassword(email: email));
+              },
+              child: const Text('Send me the password reset email'),
+            ),
+            TextButton(
+              onPressed: () {
+                context.read<AuthBloc>().add(const AuthEventLogout());
+              },
+              child: const Text('Back to login'),
+            )
+          ]),
+        ),
       ),
     );
   }
