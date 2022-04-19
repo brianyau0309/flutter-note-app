@@ -7,6 +7,7 @@ import 'package:mynotes/services/auth/auth_service.dart';
 import 'package:mynotes/utilities/dialogs/error_dialog.dart';
 import 'package:mynotes/views/auth/bloc/auth_bloc.dart';
 import 'package:mynotes/views/auth/bloc/auth_event.dart';
+import 'package:mynotes/views/auth/bloc/auth_state.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({Key? key}) : super(key: key);
@@ -55,35 +56,40 @@ class _LoginViewState extends State<LoginView> {
             decoration:
                 const InputDecoration(hintText: 'Enter your password here'),
           ),
-          TextButton(
-            onPressed: () async {
-              final email = _email.text;
-              final password = _password.text;
-              try {
+          BlocListener<AuthBloc, AuthState>(
+            listener: (context, state) async {
+              if (state is AuthStateLoggedOut) {
+                if (state.exception is UserNotFoundAuthException) {
+                  await showErrorDialog(
+                      context, AuthErrorMessage.userNotFound.message,
+                      title: AuthErrorMessage.userNotFound.title);
+                } else if (state.exception is WrongPasswordAuthException) {
+                  await showErrorDialog(
+                      context, AuthErrorMessage.wrongPassword.message,
+                      title: AuthErrorMessage.wrongPassword.title);
+                } else if (state.exception is TooManyLoginAuthException) {
+                  await showErrorDialog(
+                      context, AuthErrorMessage.tooManyRequests.message,
+                      title: AuthErrorMessage.tooManyRequests.title);
+                } else {
+                  await showErrorDialog(
+                      context, AuthErrorMessage.generic.message);
+                }
+              }
+            },
+            child: TextButton(
+              onPressed: () async {
+                final email = _email.text;
+                final password = _password.text;
                 context.read<AuthBloc>().add(
                       AuthEventLogin(
                         email: email,
                         password: password,
                       ),
                     );
-              } on UserNotFoundAuthException {
-                await showErrorDialog(
-                    context, AuthErrorMessage.userNotFound.message,
-                    title: AuthErrorMessage.userNotFound.title);
-              } on WrongPasswordAuthException {
-                await showErrorDialog(
-                    context, AuthErrorMessage.wrongPassword.message,
-                    title: AuthErrorMessage.wrongPassword.title);
-              } on TooManyLoginAuthException {
-                await showErrorDialog(
-                    context, AuthErrorMessage.tooManyRequests.message,
-                    title: AuthErrorMessage.tooManyRequests.title);
-              } on GenericAuthException {
-                await showErrorDialog(
-                    context, AuthErrorMessage.generic.message);
-              }
-            },
-            child: const Text("Login"),
+              },
+              child: const Text("Login"),
+            ),
           ),
           TextButton(
             onPressed: () async {

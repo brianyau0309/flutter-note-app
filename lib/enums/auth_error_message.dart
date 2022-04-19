@@ -6,7 +6,7 @@ enum AuthErrorMessage {
   }),
   wrongPassword({
     "code": "wrong-password",
-    "message": "Incorrect password.",
+    "message": "Wrong credentials.",
     "title": "Wrong credentials"
   }),
   tooManyRequests({
